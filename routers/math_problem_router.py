@@ -7,28 +7,32 @@ from services.quiz.math.elementary_service import ElementaryService
 from services.quiz.math.midde_service import MiddleSchoolService
 from services.quiz.math.hs_service import HighSchoolService
 from services.quiz.math.advanced_hs_service import AdvancedHighSchoolService
-from schemas.mathProblem import MathProblemResponse
+from models import MathProblem
+from schemas.mathProblem import MathProblemBase  # Pydantic schema for MathProblem
 from typing import List
 from sqlalchemy.orm import Session
+import logging
 
 router = APIRouter()
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
-@router.get("/topics-with-units")
-def get_all_topics_with_units(db: Session = Depends(get_db)):
+@router.get("/units-with-topics")
+def get_all_units_with_topics(db: Session = Depends(get_db)):
     """
-    Retrieve all topics with their associated units.
+    Retrieve all units with their associated topics.
     """
     try:
-        topics = db.query(Topic).all()
+        units = db.query(Unit).all()
 
         response = []
-        for topic in topics:
-            topic_data = {
-                "topic_id": topic.id,
-                "topic_name": topic.name,
-                "units": [{"unit_id": unit.id, "unit_name": unit.name} for unit in topic.units]
+        for unit in units:
+            unit_data = {
+                "unit_id": unit.id,
+                "unit_name": unit.name,
+                "topics": [{"topic_id": topic.id, "topic_name": topic.name} for topic in unit.topics]
             }
-            response.append(topic_data)
+            response.append(unit_data)
 
         return response
 
@@ -36,20 +40,19 @@ def get_all_topics_with_units(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# Get all topics for a specific level (subject or grade level)
-@router.get("/level/{level_id}")
-def get_topics_by_level(level_id: int, db: Session = Depends(get_db)):
+# Get all units
+@router.get("/units")
+def get_all_units(db: Session = Depends(get_db)):
     """
-    Retrieve all topics for a specific level.
+    Retrieve all units.
     """
     try:
-        # You might need to filter by level (like grade level or subject level)
-        topics = db.query(Topic).filter(Topic.subject_id == level_id).all()
+        units = db.query(Unit).all()
 
-        if not topics:
-            raise HTTPException(status_code=404, detail="No topics found for this level")
+        if not units:
+            raise HTTPException(status_code=404, detail="No units found")
 
-        return [{"topic_id": topic.id, "topic_name": topic.name} for topic in topics]
+        return [{"unit_id": unit.id, "unit_name": unit.name} for unit in units]
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -62,25 +65,54 @@ def get_topics_by_unit(unit_id: int, db: Session = Depends(get_db)):
     Retrieve all topics within a specific unit.
     """
     try:
+        logger.debug(f"Fetching unit with ID: {unit_id}")
+
         # Find the unit
         unit = db.query(Unit).filter(Unit.id == unit_id).first()
 
         if not unit:
+            logger.error(f"Unit with ID {unit_id} not found")
             raise HTTPException(status_code=404, detail="Unit not found")
+
+        logger.debug(f"Unit found: {unit.name}")
 
         # Get all topics related to this unit
         topics = unit.topics
 
         if not topics:
+            logger.warning(f"No topics found for unit with ID {unit_id}")
             raise HTTPException(status_code=404, detail="No topics found for this unit")
+
+        logger.debug(f"Topics found: {[topic.name for topic in topics]}")
 
         return [{"topic_id": topic.id, "topic_name": topic.name} for topic in topics]
 
     except Exception as e:
+        logger.error(f"Error fetching topics for unit {unit_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# Get all units for a specific level (subject or grade level)
+@router.get("/level/{level_id}")
+def get_units_by_level(level_id: int, db: Session = Depends(get_db)):
+    """
+    Retrieve all units for a specific level.
+    """
+    try:
+        # Filter units by level (like grade level or subject level)
+        units = db.query(Unit).filter(Unit.level_id == level_id).all()
+
+        if not units:
+            raise HTTPException(status_code=404, detail="No units found for this level")
+
+        return [{"unit_id": unit.id, "unit_name": unit.name} for unit in units]
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # Create a general function that can handle any level/topic/function call dynamically
-@router.get("/general/{level}/{topic}/{function_name}", response_model=MathProblemResponse)
+@router.get("/general/{level}/{topic}/{function_name}", response_model=MathProblemBase)
 def get_dynamic_math_problem(level: str, topic: str, function_name: str, 
                              general_service: GeneralMathService = Depends(),
                              elementary_service: ElementaryService = Depends(),
@@ -114,9 +146,5 @@ def get_dynamic_math_problem(level: str, topic: str, function_name: str,
     function = getattr(service, function_name)
 
     # Call the function and return the result
-    return function()
-
-# The services can have their methods dynamically accessed like this:
-# for example, the elementary_service could have:
-# def generate_addition_problem(self): ... (you would dynamically call it like this)
-
+    result = function()
+    return MathProblemBase.from_orm(result)  # Convert SQLAlchemy model to Pydantic model
