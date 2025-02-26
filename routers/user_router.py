@@ -1,0 +1,48 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from services import user_service, inventory_service, progress_service
+from models import User, InventoryItem
+from schemas.user import UserOut, UserCreate
+from schemas.inventory import InventoryItemOut
+from schemas.progress import ProgressOut
+from models.db import get_db
+
+router = APIRouter()
+
+# Get a user by their ID
+@router.get("/users/{user_id}", response_model=UserOut)
+def get_user(user_id: int, db: Session = Depends(get_db)):
+    user = user_service.get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+# Get a user's inventory
+@router.get("/users/{user_id}/inventory", response_model=list[InventoryItemOut])
+def get_user_inventory(user_id: int, db: Session = Depends(get_db)):
+    return inventory_service.get_inventory_by_user(db, user_id)
+
+# Add an item to user's inventory
+@router.post("/users/{user_id}/inventory", response_model=InventoryItemOut)
+def add_item_to_inventory(user_id: int, item_id: int, db: Session = Depends(get_db)):
+    return inventory_service.add_item_to_user_inventory(db, user_id, item_id)
+
+# Remove an item from user's inventory
+@router.delete("/users/{user_id}/inventory/{item_id}")
+def remove_item_from_inventory(user_id: int, item_id: int, db: Session = Depends(get_db)):
+    return inventory_service.remove_item_from_inventory(db, user_id, item_id)
+
+# Get a user's progress (including completed units, scores, etc.)
+@router.get("/users/{user_id}/progress", response_model=ProgressOut)
+def get_user_progress(user_id: int, db: Session = Depends(get_db)):
+    return progress_service.get_user_progress(db, user_id)
+
+# Update the user's progress (e.g., after completing a challenge or quiz)
+@router.post("/users/{user_id}/progress")
+def update_user_progress(user_id: int, progress_data: ProgressOut, db: Session = Depends(get_db)):
+    return progress_service.update_user_progress(db, user_id, progress_data)
+
+# Get user rank based on performance (total points, quiz results, etc.)
+@router.get("/users/{user_id}/rank")
+def get_user_rank(user_id: int, db: Session = Depends(get_db)):
+    return user_service.get_user_rank(db, user_id)
