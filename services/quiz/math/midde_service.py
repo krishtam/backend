@@ -9,20 +9,38 @@ class MiddleSchoolService:
     # 🏷️ Expressions & Equations
     def generate_basic_algebra_problem(self) -> MathProblem:
         problem, solution = mathgen.basic_algebra()
-        return MathProblem("Middle School", "Expressions & Equations", "Basic Algebra", problem, str(solution)
+        return MathProblem(
+            problem=problem,
+            solution=str(solution),
+            grade_level="Middle School",
+            unit_id=None,
+            topic_id=None
         )
 
     def generate_combine_like_terms_problem(self) -> MathProblem:
         problem, solution = mathgen.combine_like_terms()
-        return MathProblem("Middle School", "Expressions & Equations", "Combine Like Terms", problem, str(solution))
+        return MathProblem(
+            problem=problem,
+            solution=str(solution),
+            grade_level="Middle School",
+            unit_id=None,
+            topic_id=None
+        )
 
     def generate_expanding_problem(self) -> MathProblem:
         problem, solution = mathgen.expanding()
         return MathProblem("Middle School", "Expressions & Equations", "Expanding", problem, str(solution))
 
     def generate_factoring_problem(self) -> MathProblem:
+        """Generate a factoring problem."""
         problem, solution = mathgen.factoring()
-        return MathProblem("Middle School", "Expressions & Equations", "Factoring", problem, str(solution))
+        return MathProblem(
+            problem=problem,
+            solution=str(solution),
+            grade_level="Middle School",
+            unit_id=None,  # Set appropriate unit ID if available
+            topic_id=None  # Set appropriate topic ID if available
+        )
 
     def generate_linear_equations_problem(self) -> MathProblem:
         problem, solution = mathgen.linear_equations()

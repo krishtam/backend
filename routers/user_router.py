@@ -10,6 +10,7 @@ from models.db import get_db
 router = APIRouter()
 
 # Get a user by their ID
+
 @router.get("/users/{user_id}", response_model=UserOut)
 def get_user(user_id: int, db: Session = Depends(get_db)):
     user = user_service.get_user_by_id(db, user_id)

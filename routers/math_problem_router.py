@@ -12,6 +12,7 @@ from schemas.mathProblem import MathProblemBase  # Pydantic schema for MathProbl
 from typing import List
 from sqlalchemy.orm import Session
 import logging
+from services.topic_service import TopicService
 
 router = APIRouter()
 logging.basicConfig(level=logging.DEBUG)
@@ -109,20 +110,17 @@ def get_units_by_level(level_id: int, db: Session = Depends(get_db)):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-# Create a general function that can handle any level/topic/function call dynamically
-@router.get("/general/{level}/{topic}/{function_name}", response_model=MathProblemBase)
-def get_dynamic_math_problem(level: str, topic: str, function_name: str, 
-                             general_service: GeneralMathService = Depends(),
+    
+@router.get("/general/{level}/{topic}", response_model=MathProblemBase)
+def get_dynamic_math_problem(level: str, topic: str, 
                              elementary_service: ElementaryService = Depends(),
                              middle_school_service: MiddleSchoolService = Depends(),
                              high_school_service: HighSchoolService = Depends(),
                              advanced_hs_service: AdvancedHighSchoolService = Depends()):
     """
-    General route to retrieve a dynamically generated math problem based on level, topic, and function.
-    This dynamically accesses the correct function based on the `function_name`.
+    General route to retrieve a dynamically generated math problem based on level and topic.
     """
+
     # Map levels to their corresponding services
     services = {
         'elementary': elementary_service,
@@ -131,20 +129,31 @@ def get_dynamic_math_problem(level: str, topic: str, function_name: str,
         'advanced_high_school': advanced_hs_service
     }
 
-    # Check if the level is valid
+    # Validate level
     if level not in services:
         raise HTTPException(status_code=404, detail="Level not found")
 
-    # Get the appropriate service based on the level
+    # Initialize TopicService
+    topic_service = TopicService()
+
+    # Convert topic to function name
+    function_name = topic_service.get_function_details(topic)
+
+    # Get the service for the given level
     service = services[level]
 
-    # Check if the function exists in the service
+    # Validate if function exists in the service
     if not hasattr(service, function_name):
-        raise HTTPException(status_code=404, detail="Function not found")
+        raise HTTPException(status_code=404, detail="Function not found in the selected level")
 
-    # Get the function dynamically from the service
+    # Call the function dynamically
     function = getattr(service, function_name)
+    result = function()  # Expected to return an instance of MathProblem (ORM model)
 
-    # Call the function and return the result
-    result = function()
-    return MathProblemBase.from_orm(result)  # Convert SQLAlchemy model to Pydantic model
+    # Convert ORM object to Pydantic model
+    if isinstance(result, dict):  
+        return MathProblemBase(**result)  # If already a dict, convert directly
+    elif hasattr(result, "__dict__"):  
+        return MathProblemBase(**result.__dict__)  # Convert ORM model to dict
+    else:
+        raise HTTPException(status_code=500, detail="Invalid math problem format")

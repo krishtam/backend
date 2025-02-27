@@ -11,22 +11,22 @@ class ElementaryService:
         """Generate an addition problem."""
         problem, solution = mathgen.addition()
         return MathProblem(
-            grade_level="Elementary",
-            unit="Addition & Subtraction",
-            topic="Addition",
             problem=problem,
-            solution=str(solution)
+            solution=str(solution),
+            grade_level="Elementary",
+            unit_id=None,  # You might want to set these properly
+            topic_id=None  # You might want to set these properly
         )
 
     def generate_subtraction_problem(self) -> MathProblem:
         """Generate a subtraction problem."""
         problem, solution = mathgen.subtraction()
         return MathProblem(
-            grade_level="Elementary",
-            unit="Addition & Subtraction",
-            topic="Subtraction",
             problem=problem,
-            solution=str(solution)
+            solution=str(solution),
+            grade_level="Elementary",
+            unit_id=None,
+            topic_id=None
         )
 
     def generate_absolute_difference_problem(self) -> MathProblem:

@@ -1,20 +1,30 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, Any, Dict
 
 class MathProblemBase(BaseModel):
-    question: str
-    difficulty: int
-    topic_id: int
+    id: int | None = None
+    problem: str
+    solution: str
+    grade_level: str
+    unit_id: int | None = None
+    topic_id: int | None = None
     answer: Optional[float] = None
     explanation: Optional[str] = None
     hints: Optional[list[str]] = None
-    metadata: Optional[Dict[str, Any]] = None
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        arbitrary_types_allowed=True
+    )
+
 
 class MathProblemCreate(MathProblemBase):
     pass
 
-class MathProblemResponse(MathProblemBase):
+class MathProblem(MathProblemBase):
     id: int
-    
-    class Config:
-        from_attributes = True
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        arbitrary_types_allowed=True
+    )
