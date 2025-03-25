@@ -157,3 +157,31 @@ def get_dynamic_math_problem(level: str, topic: str,
         return MathProblemBase(**result.__dict__)  # Convert ORM model to dict
     else:
         raise HTTPException(status_code=500, detail="Invalid math problem format")
+
+@router.get("/topic/{topic_name}/level")
+def get_topic_level(topic_name: str):
+    """
+    Get the level (elementary, middle_school, high_school, advanced_high_school) for a given topic.
+    """
+    topic_service = TopicService()
+    return {"topic": topic_name, "level": topic_service.get_topic_level(topic_name)}
+
+
+@router.get("/topics-by-level")
+def get_topics_by_level():
+    """
+    Get all topics organized by their levels.
+    """
+    topic_service = TopicService()
+    topics_by_level = {
+        "elementary": [],
+        "middle_school": [],
+        "high_school": [],
+        "advanced_high_school": []
+    }
+    
+    for topic in topic_service.topic_to_level.keys():
+        level = topic_service.topic_to_level[topic]
+        topics_by_level[level].append(topic)
+    
+    return topics_by_level

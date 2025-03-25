@@ -11,8 +11,11 @@ class UserBase(BaseModel):
     interest: Optional[str] = None
     grade_level: str
 
-class UserCreate(UserBase):
+class UserCreate(BaseModel):
+    email: EmailStr
     password: str
+    name: str
+    grade_level: str
 
 class UserOut(UserBase):
     id: int
@@ -30,3 +33,12 @@ class UserUpdate(BaseModel):
     last_name: Optional[str] = None
     interest: Optional[str] = None
     grade_level: Optional[str] = None
+
+class User(UserBase):
+    id: int
+    points: int = 0
+    level: int = 1
+    is_active: bool = True
+
+    class Config:
+        from_attributes = True

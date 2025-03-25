@@ -2,10 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from services import user_service, inventory_service, progress_service
 from models import User, InventoryItem
-from schemas.user import UserOut, UserCreate
+from schemas.user import UserOut, UserCreate, User as UserSchema
 from schemas.inventory import InventoryItemOut
 from schemas.progress import ProgressOut
 from models.db import get_db
+from services.user_service import UserService
 
 router = APIRouter()
 
@@ -47,3 +48,38 @@ def update_user_progress(user_id: int, progress_data: ProgressOut, db: Session =
 @router.get("/users/{user_id}/rank")
 def get_user_rank(user_id: int, db: Session = Depends(get_db)):
     return user_service.get_user_rank(db, user_id)
+
+@router.post("/users/", response_model=UserSchema)
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    """
+    Create a new user with the provided details.
+    """
+    # Check if user with email already exists
+    db_user = db.query(User).filter(User.email == user.email).first()
+    if db_user:
+        raise HTTPException(
+            status_code=400,
+            detail="Email already registered"
+        )
+    
+    # Check if username is taken
+    db_user = db.query(User).filter(User.username == user.username).first()
+    if db_user:
+        raise HTTPException(
+            status_code=400,
+            detail="Username already taken"
+        )
+    
+
+    
+    try:
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        return db_user
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error creating user: {str(e)}"
+        )

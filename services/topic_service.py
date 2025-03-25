@@ -2,6 +2,71 @@ from fastapi import HTTPException
 
 class TopicService:
     def __init__(self):
+        # Map topics to their corresponding levels
+        self.topic_to_level = {
+            # Elementary School Topics
+            "Addition": "elementary",
+            "Subtraction": "elementary",
+            "Multiplication": "elementary",
+            "Division": "elementary",
+            "Absolute Difference": "elementary",
+            "Fraction to Decimal": "elementary",
+            "Square": "elementary",
+            "Square Root": "elementary",
+            "Cube Root": "elementary",
+            "Factorial": "elementary",
+            "Greatest Common Divisor": "elementary",
+            "Prime Number Check": "elementary",
+            "Composite Number Check": "elementary",
+            "Compare Fractions": "elementary",
+            "Fraction Multiplication": "elementary",
+            "Divide Fractions": "elementary",
+            "Simplify Square Root": "elementary",
+
+            # Middle School Topics
+            "Basic Algebra": "middle_school",
+            "Combine Like Terms": "middle_school",
+            "Expanding": "middle_school",
+            "Factoring": "middle_school",
+            "Linear Equations": "middle_school",
+            "Simple Interest": "middle_school",
+            "Compound Interest": "middle_school",
+            "Distance Between Two Points": "middle_school",
+            "Midpoint of Two Points": "middle_school",
+            "Line Equation from Two Points": "middle_school",
+            "Exponentiation": "middle_school",
+            "Power of Powers": "middle_school",
+            "Mean & Median": "middle_school",
+            "Combinations": "middle_school",
+            "Permutation": "middle_school",
+            "Dice Sum Probability": "middle_school",
+
+            # High School Topics
+            "Quadratic Equation": "high_school",
+            "Complex Quadratic": "high_school",
+            "Logarithm": "high_school",
+            "Pythagorean Theorem": "high_school",
+            "Basic Trigonometry": "high_school",
+            "Surface Area of Pyramid": "high_school",
+            "Surface Area of Cone": "high_school",
+            "Volume of Pyramid": "high_school",
+            "Volume of Cone": "high_school",
+            "Data Summary": "high_school",
+            "Confidence Interval": "high_school",
+            "Conditional Probability": "high_school",
+            "Binomial Distribution": "high_school",
+
+            # Advanced High School Topics
+            "Matrix Determinant": "advanced_high_school",
+            "Matrix Inversion": "advanced_high_school",
+            "Matrix Multiplication": "advanced_high_school",
+            "Vector Cross Product": "advanced_high_school",
+            "Vector Dot Product": "advanced_high_school",
+            "Complex Numbers": "advanced_high_school",
+            "Derivatives": "advanced_high_school",
+            "Integrals": "advanced_high_school",
+        }
+
         # Map topics to their corresponding function names
         self.topic_to_function = {
             # Elementary School Topics
@@ -96,6 +161,20 @@ class TopicService:
             "Definite Integral": "generate_definite_integral",
             "Stationary Points": "generate_stationary_points",
         }
+
+    def get_topic_level(self, topic_name: str) -> str:
+        """
+        Get the level (elementary, middle_school, high_school, advanced_high_school) for a given topic.
+        """
+        formatted_topic = " ".join(word.capitalize() for word in topic_name.replace("-", " ").split())
+        
+        if formatted_topic not in self.topic_to_level:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Topic '{formatted_topic}' not found. Available topics: {list(self.topic_to_level.keys())}"
+            )
+        
+        return self.topic_to_level[formatted_topic]
 
     def get_function_details(self, topic_name: str) -> str:
         """
